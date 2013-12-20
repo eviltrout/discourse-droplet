@@ -1,0 +1,41 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    annoy (0.5.6)
+      highline (>= 1.5.0)
+    digitalocean (0.0.2)
+      faraday
+      faraday_middleware
+      recursive-open-struct
+    docile (1.1.1)
+    drydock (0.6.9)
+    faraday (0.8.8)
+      multipart-post (~> 1.2.0)
+    faraday_middleware (0.9.0)
+      faraday (>= 0.7.4, < 0.9)
+    highline (1.6.20)
+    multipart-post (1.2.0)
+    net-scp (1.1.2)
+      net-ssh (>= 2.6.5)
+    net-ssh (2.7.0)
+    oj (2.2.3)
+    recursive-open-struct (0.4.5)
+    rye (0.9.11)
+      annoy
+      docile (>= 1.0.1)
+      highline (>= 1.5.1)
+      net-scp (>= 1.0.2)
+      net-ssh (>= 2.0.13)
+      sysinfo (>= 0.7.3)
+    storable (0.8.9)
+    sysinfo (0.8.0)
+      drydock
+      storable
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  digitalocean
+  oj
+  rye

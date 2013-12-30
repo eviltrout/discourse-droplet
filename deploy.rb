@@ -22,12 +22,30 @@ host = gets.chomp
 puts
 
 keys = Digitalocean::SshKey.all['ssh_keys']
-if keys.empty?
-  puts "ERROR: You need to upload a ssh key to digital ocean"
+
+if keys.nil? || keys.empty?
+  puts "ERROR: You need to upload a ssh key to digital ocean and use working credentials"
   exit
 end
-
 ssh_key_id = keys[0]['id']
+
+puts "SMTP Host: (empty for none, not recommended)"
+smtp_host = gets.chomp
+puts
+
+unless smtp_host.empty?
+  puts "SMTP Port:"
+  smtp_port = gets.chomp
+  puts
+
+  puts "SMTP Username:"
+  smtp_username = gets.chomp
+  puts
+
+  puts "SMTP Password:"
+  smtp_password = gets.chomp
+  puts
+end
 
 puts
 puts "Confirm Your Settings"
@@ -35,7 +53,14 @@ puts "=====================\n"
 puts "Host: #{host}"
 puts "Email: #{email}"
 puts "SSH Key: #{keys[0]['name']}"
+unless smtp_host.empty?
+  puts "SMTP Host: #{smtp_host}"
+  puts "SMTP Port: #{smtp_port}"
+  puts "SMTP Username: #{smtp_username}"
+  puts "SMTP Password: #{smtp_password}"
+end
 puts
+
 
 response = nil
 while response != 'y'
@@ -78,6 +103,13 @@ config = YAML.load(rbox.cat("/var/docker/discourse_docker/samples/standalone.yml
 config['params']['ssh_key'] = Digitalocean::SshKey.retrieve(ssh_key_id)['ssh_key']['ssh_pub_key']
 config['env']['DISCOURSE_HOSTNAME'] = host
 config['env']['DISCOURSE_DEVELOPER_EMAILS'] = email
+
+unless smtp_host.empty?
+  config['env']['DISCOURSE_SMTP_ADDRESS'] = smtp_host
+  config['env']['DISCOURSE_SMTP_PORT'] = smtp_port
+  config['env']['DISCOURSE_SMTP_USER_NAME'] = smtp_username
+  config['env']['DISCOURSE_SMTP_PASSWORD'] = smtp_password
+end
 
 app_yml = StringIO.new(config.to_yaml)
 rbox.file_upload app_yml, "/var/docker/discourse_docker/containers/app.yml"

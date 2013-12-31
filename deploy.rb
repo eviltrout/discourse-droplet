@@ -86,7 +86,7 @@ end
 print "\n"
 
 puts "Removing any old SSH host entries (digital ocean reuses them)"
-exec "ssh-keygen -R #{droplet['ip_address']}" if File.exists?(File.expand_path("~/.ssh/known_hosts"))
+system "ssh-keygen -R #{droplet['ip_address']}" if File.exists?(File.expand_path("~/.ssh/known_hosts"))
 
 puts "Initializing Droplet (#{droplet_id}) #{droplet['ip_address']}..."
 attempts = 0

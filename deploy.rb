@@ -85,12 +85,25 @@ while droplet['status'] != 'active'
 end
 print "\n"
 
-puts "Waiting for a few seconds..."
-sleep 30
+puts "Removing any old SSH host entries (digital ocean reuses them)"
+exec "ssh-keygen -R #{droplet['ip_address']}" if File.exists?("~/.ssh/known_hosts")
 
-puts "Initializing droplet (#{droplet_id}) #{droplet['ip_address']} ..."
-rbox = Rye::Box.new(droplet['ip_address'], user: 'root')
-rbox.mkdir :p, '/var/docker/data'
+puts "Initializing Droplet (#{droplet_id}) #{droplet['ip_address']}..."
+attempts = 0
+begin
+  rbox =Rye::Box.new(droplet['ip_address'], user: 'root', timeout: 10)
+  rbox.mkdir :p, '/var/docker/data'
+rescue Timeout::Error, Net::SSH::Disconnect
+  attempts += 1
+  if attempts < 20
+    puts "Retrying SSH... Attempt: #{attempts}"
+    sleep 10
+    retry
+  end
+  puts "Couldn't connect via SSH"
+end
+
+
 rbox.cd '/var/docker'
 result = rbox.ls('/var/docker').to_s
 if result !~ /discourse_docker/
@@ -124,3 +137,5 @@ rbox.launcher 'start', 'app'
 puts "Discourse is ready to use:"
 puts "http://#{host}"
 puts "http://#{droplet['ip_address']}"
+puts
+puts "If you get a Gateway 502 error, try again in a few seconds; Rails is still likely starting up."

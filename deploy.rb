@@ -4,6 +4,12 @@ require 'bundler/setup'
 Bundler.require(:default)
 
 Rye::Cmd.add_command :launcher, './launcher'
+Rye::Cmd.add_command :keygen, "ssh-keygen"
+Rye::Cmd.add_command :dd, "dd"
+Rye::Cmd.add_command :mkswap, "mkswap"
+Rye::Cmd.add_command :swapon, "swapon"
+Rye::Cmd.add_command :swap_fstab, 'echo "/swapfile       none    swap    sw      0       0" >> /etc/fstab'
+Rye::Cmd.add_command :swapiness, 'echo 0 | tee /proc/sys/vm/swappiness'
 
 puts "Your Digital Ocean Client id:"
 Digitalocean.client_id = gets.chomp
@@ -103,6 +109,22 @@ rescue Timeout::Error, Net::SSH::Disconnect
   puts "Couldn't connect via SSH"
 end
 
+puts "Creating Swap"
+rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', 'count=1024k'
+rbox.mkswap '/swapfile'
+rbox.swapon "/swapfile"
+rbox.disable_safe_mode
+rbox.swap_fstab
+rbox.swapiness
+rbox.chown 'root:root', '/swapfile'
+rbox.chmod '0600', '/swapfile'
+rbox.enable_safe_mode
+
+# Generate a SSH key to shell into docker with
+puts "Generating SSH key"
+rbox.keygen '-t', 'rsa', '-f', '/root/.ssh/id_rsa', '-N', ''
+pub_key = rbox.cat("/root/.ssh/id_rsa.pub").to_s
+
 
 rbox.cd '/var/docker'
 result = rbox.ls('/var/docker').to_s
@@ -113,7 +135,7 @@ end
 
 puts "Customizing config file..."
 config = YAML.load(rbox.cat("/var/docker/discourse_docker/samples/standalone.yml").to_s)
-config['params']['ssh_key'] = Digitalocean::SshKey.retrieve(ssh_key_id)['ssh_key']['ssh_pub_key']
+config['params']['ssh_key'] = pub_key
 config['env']['DISCOURSE_HOSTNAME'] = host
 config['env']['DISCOURSE_DEVELOPER_EMAILS'] = email
 

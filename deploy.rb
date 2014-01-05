@@ -69,7 +69,7 @@ puts
 
 
 response = nil
-while response != 'y'
+while response.downcase != 'y'
   puts "Type 'Y' to continue"
   response = gets.chomp
 end

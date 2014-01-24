@@ -120,11 +120,6 @@ rbox.chown 'root:root', '/swapfile'
 rbox.chmod '0600', '/swapfile'
 rbox.enable_safe_mode
 
-# Generate a SSH key to shell into docker with
-puts "Generating SSH key"
-rbox.keygen '-t', 'rsa', '-f', '/root/.ssh/id_rsa', '-N', ''
-pub_key = rbox.cat("/root/.ssh/id_rsa.pub").to_s
-
 
 rbox.cd '/var/docker'
 result = rbox.ls('/var/docker').to_s
@@ -132,6 +127,11 @@ if result !~ /discourse_docker/
   puts "Checking out discourse_docker..."
   rbox.git 'clone', 'https://github.com/SamSaffron/discourse_docker.git'
 end
+
+# Generate a SSH key to shell into docker with
+puts "Generating SSH key"
+rbox.keygen '-t', 'rsa', '-f', '/root/.ssh/id_rsa', '-N', ''
+pub_key = rbox.cat("/root/.ssh/id_rsa.pub").to_s
 
 puts "Customizing config file..."
 config = YAML.load(rbox.cat("/var/docker/discourse_docker/samples/standalone.yml").to_s)

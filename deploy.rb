@@ -98,7 +98,7 @@ puts "Initializing Droplet (#{droplet_id}) #{droplet['ip_address']}..."
 attempts = 0
 begin
   rbox =Rye::Box.new(droplet['ip_address'], user: 'root', timeout: 10)
-  rbox.mkdir :p, '/var/docker/data'
+  rbox.ls
 rescue Timeout::Error, Net::SSH::Disconnect
   attempts += 1
   if attempts < 20
@@ -120,21 +120,17 @@ rbox.chown 'root:root', '/swapfile'
 rbox.chmod '0600', '/swapfile'
 rbox.enable_safe_mode
 
+puts "Checking out discourse_docker..."
+rbox.git 'clone', 'https://github.com/SamSaffron/discourse_docker.git', '/var/docker'
 
 rbox.cd '/var/docker'
-result = rbox.ls('/var/docker').to_s
-if result !~ /discourse_docker/
-  puts "Checking out discourse_docker..."
-  rbox.git 'clone', 'https://github.com/SamSaffron/discourse_docker.git'
-end
-
 # Generate a SSH key to shell into docker with
 puts "Generating SSH key"
 rbox.keygen '-t', 'rsa', '-f', '/root/.ssh/id_rsa', '-N', ''
 pub_key = rbox.cat("/root/.ssh/id_rsa.pub").to_s
 
 puts "Customizing config file..."
-config = YAML.load(rbox.cat("/var/docker/discourse_docker/samples/standalone.yml").to_s)
+config = YAML.load(rbox.cat("/var/docker/samples/standalone.yml").to_s)
 config['params']['ssh_key'] = pub_key
 config['env']['DISCOURSE_HOSTNAME'] = host
 config['env']['DISCOURSE_DEVELOPER_EMAILS'] = email
@@ -147,10 +143,10 @@ unless smtp_host.empty?
 end
 
 app_yml = StringIO.new(config.to_yaml)
-rbox.file_upload app_yml, "/var/docker/discourse_docker/containers/app.yml"
+rbox.file_upload app_yml, "/var/docker/containers/app.yml"
 
 puts "Bootstrapping image..."
-rbox.cd '/var/docker/discourse_docker'
+rbox.cd '/var/docker'
 
 rbox.launcher 'bootstrap', 'app'
 puts "Starting Discourse..."

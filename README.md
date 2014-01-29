@@ -2,6 +2,7 @@ discourse-droplet
 =================
 
 A ruby script for installing Discourse on Digital Ocean using a simple wizard.
+Behind the scenes it makes heavy use of [discourse_docker](https://github.com/discourse/discourse_docker).
 
 Usage
 =====
@@ -47,6 +48,13 @@ http://192.168.0.1    (the IP of your Droplet)
 ```
 
 And you should be able to access your new forum in your browser. So easy!
+
+Next Steps, Upgrading, etc.
+===========================
+
+For upgrading instructions, check out the [discourse_docker](https://github.com/discourse/discourse_docker).
+
+For more information about configuring Discourse, check out [discourse](http://github.com/discourse/discourse).
 
 License
 =======

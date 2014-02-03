@@ -23,9 +23,18 @@ puts "Your developer email address:"
 email = gets.chomp
 puts
 
-puts "Host of Discourse forum (example: eviltrout.com)"
+puts "Host of Discourse forum: (example: eviltrout.com)"
 host = gets.chomp
 puts
+
+size = ""
+while size != "1" and size != "2"
+  puts "Select size: (1 or 2)"
+  puts "1. 1GB Memory, 1 Core, 30GB SSD Disk, 2TB Transfer, $10/month ($0.015/hour)"
+  puts "2. 2GB Memory, 2 Cores, 40GB SSD Disk, 3TB Transfer, $20/month ($0.030/hour)"
+  size = gets.chomp
+  puts
+end
 
 keys = Digitalocean::SshKey.all['ssh_keys']
 
@@ -53,11 +62,11 @@ unless smtp_host.empty?
   puts
 end
 
-puts
 puts "Confirm Your Settings"
 puts "=====================\n"
-puts "Host: #{host}"
 puts "Email: #{email}"
+puts "Host: #{host}"
+puts "Size: The one with #{size}GB of memory"
 puts "SSH Key: #{keys[0]['name']}"
 unless smtp_host.empty?
   puts "SMTP Host: #{smtp_host}"
@@ -67,7 +76,6 @@ unless smtp_host.empty?
 end
 puts
 
-
 response = ""
 while response.downcase != 'y'
   puts "Type 'Y' to continue"
@@ -76,10 +84,13 @@ end
 puts
 puts "Creating #{host}..."
 
-
-droplet = Digitalocean::Droplet.create(name: host, size_id: 63, image_id: 1341147, region_id: 4, ssh_key_ids: ssh_key_id)['droplet']
+if size == "1"
+  size_id = 63
+else
+  size_id = 62
+end
+droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 1341147, region_id: 4, ssh_key_ids: ssh_key_id)['droplet']
 droplet_id = droplet['id']
-
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."
 
@@ -110,7 +121,11 @@ rescue Timeout::Error, Net::SSH::Disconnect
 end
 
 puts "Creating Swap"
-rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', 'count=1024k'
+if size == "1"
+  rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', 'count=1024k'
+else
+  rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', 'count=2048k'
+end
 rbox.mkswap '/swapfile'
 rbox.swapon "/swapfile"
 rbox.disable_safe_mode

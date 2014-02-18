@@ -89,7 +89,7 @@ if size == "1"
 else
   size_id = 62
 end
-droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 1341147, region_id: 4, ssh_key_ids: ssh_key_id)['droplet']
+droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 2158507, region_id: 4, ssh_key_ids: ssh_key_id)['droplet']
 droplet_id = droplet['id']
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."

@@ -42,7 +42,9 @@ if keys.nil? || keys.empty?
   puts "ERROR: You need to upload a ssh key to digital ocean and use working credentials"
   exit
 end
-ssh_key_id = keys[0]['id']
+
+ssh_key_names = keys.map { |k| k['name'] }.join(", ")
+ssh_key_ids = keys.map { |k| k['id'] }
 
 puts "SMTP Host: (empty for none, not recommended)"
 smtp_host = gets.chomp
@@ -67,7 +69,7 @@ puts "=====================\n"
 puts "Email: #{email}"
 puts "Host: #{host}"
 puts "Size: The one with #{size}GB of memory"
-puts "SSH Key: #{keys[0]['name']}"
+puts "SSH Key(s): #{ssh_key_names}"
 unless smtp_host.empty?
   puts "SMTP Host: #{smtp_host}"
   puts "SMTP Port: #{smtp_port}"
@@ -89,7 +91,7 @@ if size == "1"
 else
   size_id = 62
 end
-droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 2158507, region_id: 4, ssh_key_ids: ssh_key_id)['droplet']
+droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 2158507, region_id: 4, ssh_key_ids: ssh_key_ids)['droplet']
 droplet_id = droplet['id']
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."

@@ -36,15 +36,15 @@ while size != "1" and size != "2"
   puts
 end
 
-keys = Digitalocean::SshKey.all['ssh_keys']
+keys = Digitalocean::SshKey.all.ssh_keys
 
 if keys.nil? || keys.empty?
   puts "ERROR: You need to upload a ssh key to digital ocean and use working credentials"
   exit
 end
 
-ssh_key_names = keys.map { |k| k['name'] }.join(", ")
-ssh_key_ids = keys.map { |k| k['id'] }
+ssh_key_names = keys.map { |k| k.name }.join(", ")
+ssh_key_ids = keys.map { |k| k.id }
 
 puts "SMTP Host: (empty for none, not recommended)"
 smtp_host = gets.chomp
@@ -91,26 +91,26 @@ if size == "1"
 else
   size_id = 62
 end
-droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 2158507, region_id: 4, ssh_key_ids: ssh_key_ids)['droplet']
-droplet_id = droplet['id']
+droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 2158507, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
+droplet_id = droplet.id
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."
 
-droplet = Digitalocean::Droplet.retrieve(droplet_id)['droplet']
-while droplet['status'] != 'active'
+droplet = Digitalocean::Droplet.retrieve(droplet_id).droplet
+while droplet.status != 'active'
   sleep 5
-  droplet = Digitalocean::Droplet.retrieve(droplet_id)['droplet']
+  droplet = Digitalocean::Droplet.retrieve(droplet_id).droplet
   print '.'
 end
 print "\n"
 
 puts "Removing any old SSH host entries (digital ocean reuses them)"
-system "ssh-keygen -R #{droplet['ip_address']}" if File.exists?(File.expand_path("~/.ssh/known_hosts"))
+system "ssh-keygen -R #{droplet.ip_address}" if File.exists?(File.expand_path("~/.ssh/known_hosts"))
 
-puts "Initializing Droplet (#{droplet_id}) #{droplet['ip_address']}..."
+puts "Initializing Droplet (#{droplet_id}) #{droplet.ip_address}..."
 attempts = 0
 begin
-  rbox =Rye::Box.new(droplet['ip_address'], user: 'root', timeout: 10)
+  rbox =Rye::Box.new(droplet.ip_address, user: 'root', timeout: 10)
   rbox.ls
 rescue Timeout::Error, Net::SSH::Disconnect
   attempts += 1
@@ -171,6 +171,6 @@ rbox.launcher 'start', 'app'
 
 puts "Discourse is ready to use:"
 puts "http://#{host}"
-puts "http://#{droplet['ip_address']}"
+puts "http://#{droplet.ip_address}"
 puts
 puts "If you get a Gateway 502 error, try again in a few seconds; Rails is still likely starting up."

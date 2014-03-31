@@ -10,6 +10,7 @@ Rye::Cmd.add_command :mkswap, "mkswap"
 Rye::Cmd.add_command :swapon, "swapon"
 Rye::Cmd.add_command :swap_fstab, 'echo "/swapfile       none    swap    sw      0       0" >> /etc/fstab'
 Rye::Cmd.add_command :swapiness, 'echo 0 | tee /proc/sys/vm/swappiness'
+Rye::Cmd.add_command :apt_get, "apt-get"
 
 puts "Your Digital Ocean Client id:"
 Digitalocean.client_id = gets.chomp
@@ -139,6 +140,10 @@ rbox.enable_safe_mode
 
 puts "Checking out discourse_docker..."
 rbox.git 'clone', 'https://github.com/SamSaffron/discourse_docker.git', '/var/docker'
+
+puts "Upgrading docker..."
+rbox.apt_get :y, :q, 'update'
+rbox.apt_get :y, :q, 'install', 'lxc-docker'
 
 rbox.cd '/var/docker'
 # Generate a SSH key to shell into docker with

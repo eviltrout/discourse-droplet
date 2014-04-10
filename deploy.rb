@@ -92,7 +92,7 @@ if size == "1"
 else
   size_id = 62
 end
-droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 2158507, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
+droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
 droplet_id = droplet.id
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."
@@ -113,7 +113,7 @@ attempts = 0
 begin
   rbox =Rye::Box.new(droplet.ip_address, user: 'root', timeout: 10)
   rbox.ls
-rescue Timeout::Error, Net::SSH::Disconnect
+rescue Timeout::Error, Net::SSH::Disconnect, Errno::ECONNREFUSED
   attempts += 1
   if attempts < 20
     puts "Retrying SSH... Attempt: #{attempts}"
@@ -139,7 +139,7 @@ rbox.chmod '0600', '/swapfile'
 rbox.enable_safe_mode
 
 puts "Checking out discourse_docker..."
-rbox.git 'clone', 'https://github.com/SamSaffron/discourse_docker.git', '/var/docker'
+rbox.git 'clone', 'https://github.com/discourse/discourse_docker.git', '/var/docker'
 
 puts "Upgrading docker..."
 rbox.apt_get :y, :q, 'update'
@@ -170,9 +170,9 @@ rbox.file_upload app_yml, "/var/docker/containers/app.yml"
 puts "Bootstrapping image..."
 rbox.cd '/var/docker'
 
-rbox.launcher 'bootstrap', 'app'
+rbox.launcher 'bootstrap', 'app', '--skip-prereqs'
 puts "Starting Discourse..."
-rbox.launcher 'start', 'app'
+rbox.launcher 'start', 'app', '--skip-prereqs'
 
 puts "Discourse is ready to use:"
 puts "http://#{host}"

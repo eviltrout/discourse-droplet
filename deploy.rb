@@ -28,11 +28,23 @@ puts "Host of Discourse forum: (example: eviltrout.com)"
 host = gets.chomp
 puts
 
+# TODO: ask for region
+# TODO: dynamically retrieve list of availables sizes depending on region
+
+sizes = {
+  "1" => 63,
+  "2" => 62,
+  "3" => 64,
+  "4" => 65,
+}
+
 size = ""
-while size != "1" and size != "2"
-  puts "Select size: (1 or 2)"
-  puts "1. 1GB Memory, 1 Core, 30GB SSD Disk, 2TB Transfer, $10/month ($0.015/hour)"
-  puts "2. 2GB Memory, 2 Cores, 40GB SSD Disk, 3TB Transfer, $20/month ($0.030/hour)"
+until sizes.keys.include?(size)
+  puts "Select size:"
+  puts "  1. 1GB Memory, 1 Core, 30GB SSD Disk, 2TB Transfer, $10/month ($0.015/hour)"
+  puts "  2. 2GB Memory, 2 Cores, 40GB SSD Disk, 3TB Transfer, $20/month ($0.030/hour)"
+  puts "  3. 4GB Memory, 2 Cores, 60GB SSD Disk, 4TB Transfer, $40/month ($0.060/hour)"
+  puts "  4. 8GB Memory, 4 Cores, 80GB SSD Disk, 5TB Transfer, $80/month ($0.119/hour)"
   size = gets.chomp
   puts
 end
@@ -66,7 +78,7 @@ unless smtp_host.empty?
 end
 
 puts "Confirm Your Settings"
-puts "=====================\n"
+puts "====================="
 puts "Email: #{email}"
 puts "Host: #{host}"
 puts "Size: The one with #{size}GB of memory"
@@ -87,12 +99,7 @@ end
 puts
 puts "Creating #{host}..."
 
-if size == "1"
-  size_id = 63
-else
-  size_id = 62
-end
-droplet = Digitalocean::Droplet.create(name: host, size_id: size_id, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
+droplet = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
 droplet_id = droplet.id
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."
@@ -103,9 +110,9 @@ while droplet.status != 'active'
   droplet = Digitalocean::Droplet.retrieve(droplet_id).droplet
   print '.'
 end
-print "\n"
+puts
 
-puts "Removing any old SSH host entries (digital ocean reuses them)"
+puts "Removing any old SSH host entries (digital ocean reuses them)..."
 system "ssh-keygen -R #{droplet.ip_address}" if File.exists?(File.expand_path("~/.ssh/known_hosts"))
 
 puts "Initializing Droplet (#{droplet_id}) #{droplet.ip_address}..."
@@ -123,12 +130,9 @@ rescue Timeout::Error, Net::SSH::Disconnect, Errno::ECONNREFUSED
   puts "Couldn't connect via SSH"
 end
 
-puts "Creating Swap"
-if size == "1"
-  rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', 'count=1024k'
-else
-  rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', 'count=2048k'
-end
+puts "Creating Swap..."
+swap_count = size == "1" ? 2048 : 1024 # 2GB swap when 1GB RAM
+rbox.dd 'if=/dev/zero', 'of=/swapfile', 'bs=1024', "count=#{swap_count}k"
 rbox.mkswap '/swapfile'
 rbox.swapon "/swapfile"
 rbox.disable_safe_mode
@@ -147,7 +151,7 @@ rbox.apt_get :y, :q, 'install', 'lxc-docker'
 
 rbox.cd '/var/docker'
 # Generate a SSH key to shell into docker with
-puts "Generating SSH key"
+puts "Generating SSH key..."
 rbox.keygen '-t', 'rsa', '-f', '/root/.ssh/id_rsa', '-N', ''
 pub_key = rbox.cat("/root/.ssh/id_rsa.pub").to_s
 
@@ -169,8 +173,8 @@ rbox.file_upload app_yml, "/var/docker/containers/app.yml"
 
 puts "Bootstrapping image..."
 rbox.cd '/var/docker'
-
 rbox.launcher 'bootstrap', 'app', '--skip-prereqs'
+
 puts "Starting Discourse..."
 rbox.launcher 'start', 'app', '--skip-prereqs'
 

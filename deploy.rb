@@ -99,7 +99,7 @@ end
 puts
 puts "Creating #{host}..."
 
-create_result = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids)
+create_result = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 8345531, region_id: 4, ssh_key_ids: ssh_key_ids)
 if create_result.status == 'ERROR'
   puts "Error creating droplet:"
   puts create_result.error_message

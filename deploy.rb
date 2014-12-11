@@ -99,7 +99,7 @@ end
 puts
 puts "Creating #{host}..."
 
-droplet = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
+droplet = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 8345531, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
 droplet_id = droplet.id
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."

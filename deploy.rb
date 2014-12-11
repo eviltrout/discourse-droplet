@@ -99,7 +99,13 @@ end
 puts
 puts "Creating #{host}..."
 
-droplet = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids).droplet
+create_result = Digitalocean::Droplet.create(name: host, size_id: sizes[size].to_s, image_id: 3104894, region_id: 4, ssh_key_ids: ssh_key_ids)
+if create_result.status == 'ERROR'
+  puts "Error creating droplet:"
+  puts create_result.error_message
+  exit
+end
+droplet = create_result.droplet
 droplet_id = droplet.id
 
 print "Waiting for #{host} (#{droplet_id}) to become active..."
